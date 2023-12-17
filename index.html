@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>匿名聊天</title>
+    <style>
+        .message {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="messages"></div>
+    <input type="text" id="messageInput" placeholder="輸入你的消息" onkeydown="handleKeyPress(event)" />
+    <button onclick="sendMessage()">發送</button>
+    <button onclick="leaveChat()">離開</button>
+
+    <script>
+        const socket = new WebSocket("ws://localhost/ws");
+
+        socket.onmessage = function (event) {       //在客戶端用WebSocket接收來自伺服器的消息
+
+            const messagesDiv = document.getElementById("messages");
+            const message = document.createElement("p");
+            message.className = "message";
+            message.textContent = event.data;
+            messagesDiv.appendChild(message);
+        };
+
+        function sendMessage() {                //發送訊息  
+            const messageInput = document.getElementById("messageInput");
+            const message = messageInput.value.trim(); // 使用 trim() 刪除前後空白
+            if (message !== "") {
+                socket.send(message);               //確保發送的訊息不是空白
+                messageInput.value = "";
+            }
+        }
+
+        function handleKeyPress(event) {        //判斷按下Enter鍵
+            if (event.key === "Enter") {
+                sendMessage();
+            }
+        }
+
+    </script>
+</body>
+
+</html>
