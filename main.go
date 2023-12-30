@@ -1,10 +1,8 @@
 package main
 
 import (
-	//"encoding/json"
 	"math/rand"
 	"net/http"
-
 	"sync"
 
 	"github.com/gin-gonic/gin"
@@ -93,22 +91,36 @@ func serveWs(manager *ClientManager, w http.ResponseWriter, r *http.Request) {
 	defer conn.Close()
 	userId := generateUserId()
 
-	//向前端發送一條完整的訊息
+	// 向前端發送一條完整的訊息
 	connectedMessage := "Connected! You are " + userId
 	conn.WriteMessage(websocket.TextMessage, []byte(connectedMessage))
 
-	//創建 Client 時傳遞 UserId
+	// 建立 Client 時傳遞 UserId
 	client := &Client{socket: conn, send: make(chan []byte), UserId: userId}
 	manager.register <- client
 
 	go client.writePump()
 	client.readPump(manager)
+
+	// 在用戶斷開連線時發送離開訊息
+	leftMessage := map[string]interface{}{
+		"userId":  userId,
+		"message": userId + " leave the chat",
+	}
+	manager.broadcast <- encodeMessage(leftMessage)
 }
 
 func (c *Client) readPump(manager *ClientManager) {
 	defer func() {
 		manager.unregister <- c
 		c.socket.Close()
+
+		// 離開聊天室時顯示成員已離開
+		leftMessage := map[string]interface{}{
+			"userId":  c.UserId,
+			"message": c.UserId + " leave the chat",
+		}
+		manager.broadcast <- encodeMessage(leftMessage)
 	}()
 
 	for {
@@ -160,7 +172,7 @@ func (c *Client) writePump() {
 	}
 }
 
-func encodeMessage(data map[string]interface{}) []byte { //將UserID和Message組合在一起並編碼
+func encodeMessage(data map[string]interface{}) []byte { // 將 UserID 和 Message 組合在一起並編碼
 	userID, _ := data["userId"].(string)
 	message, _ := data["message"].(string)
 
@@ -169,7 +181,7 @@ func encodeMessage(data map[string]interface{}) []byte { //將UserID和Message�
 	return []byte(result)
 }
 
-func generateUserId() string { //生成UserID
+func generateUserId() string { // 生成 UserID
 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	result := make([]byte, 4)
 	for i := range result {
