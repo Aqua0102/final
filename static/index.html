@@ -63,6 +63,16 @@
 
 <body>
     <div id="messages"></div>
+    <div id="emojiSection">
+        <span class="emoji" onclick="insertEmoji('😉')">😉</span>
+        <span class="emoji" onclick="insertEmoji('🤣')">🤣</span>
+        <span class="emoji" onclick="insertEmoji('😍')">😍</span>
+        <span class="emoji" onclick="insertEmoji('😅')">😅</span>
+        <span class="emoji" onclick="insertEmoji('😇')">😇</span>
+        <span class="emoji" onclick="insertEmoji('😘')">😘</span>
+        <span class="emoji" onclick="insertEmoji('😋')">😋</span>
+
+    </div>
     <input type="text" id="messageInput" placeholder="Type your message" onkeydown="handleKeyPress(event)" />
     <button id="sendMessageBtn" onclick="sendMessage()">Send</button>
     <button id="leaveChatBtn" onclick="leaveChat()">Leave</button>
@@ -83,6 +93,10 @@
 
         };
 
+        function insertEmoji(emoji) {
+            const messageInput = document.getElementById("messageInput");
+            messageInput.value += emoji;
+        }
         function sendMessage() {
             const messageInput = document.getElementById("messageInput");
             const message = messageInput.value.trim();

@@ -3,6 +3,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/kyokomi/emoji/v2"
 	"math/rand"
 	"time"
 )
@@ -13,6 +14,7 @@ func encodeMessage(data map[string]interface{}) []byte {
 
 	// Replace swear words in the message
 	message = maskSwearWord(message)
+	message = emoji.Sprint(message)
 
 	// Format the message with timestamp, user ID, and content
 	timestamp := "<span style=\"color: " + "#FFFFFF" + "; font-weight: bold;\">" + time.Now().Format("15:04:05") + "</span>"
