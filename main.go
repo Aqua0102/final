@@ -95,6 +95,13 @@ func serveWs(manager *ClientManager, w http.ResponseWriter, r *http.Request) {
 	connectedMessage := "Connected! You are " + userId
 	conn.WriteMessage(websocket.TextMessage, []byte(connectedMessage))
 
+	// Send a welcome message to the connected client
+	welcomeMessage := map[string]interface{}{
+		"userId":  "server",
+		"message": userId + " joined the chat",
+	}
+	manager.broadcast <- encodeMessage(welcomeMessage)
+
 	// 建立 Client 時傳遞 UserId
 	client := &Client{socket: conn, send: make(chan []byte), UserId: userId}
 	manager.register <- client
@@ -104,7 +111,7 @@ func serveWs(manager *ClientManager, w http.ResponseWriter, r *http.Request) {
 
 	// 在用戶斷開連線時發送離開訊息
 	leftMessage := map[string]interface{}{
-		"userId":  userId,
+		"userId":  "server",
 		"message": userId + " leave the chat",
 	}
 	manager.broadcast <- encodeMessage(leftMessage)
@@ -117,7 +124,7 @@ func (c *Client) readPump(manager *ClientManager) {
 
 		// 離開聊天室時顯示成員已離開
 		leftMessage := map[string]interface{}{
-			"userId":  c.UserId,
+			"userId":  "server",
 			"message": c.UserId + " leave the chat",
 		}
 		manager.broadcast <- encodeMessage(leftMessage)
@@ -129,14 +136,11 @@ func (c *Client) readPump(manager *ClientManager) {
 			return
 		}
 		message := append([]byte{}, p...)
-		println(message)
 		data := map[string]interface{}{
 			"userId":  c.UserId,
 			"message": string(message),
 		}
 
-		println("read :")
-		println(data["message"].(string))
 		manager.broadcast <- encodeMessage(data)
 
 		if messageType == websocket.CloseMessage {
@@ -163,7 +167,7 @@ func (c *Client) writePump() {
 				"userId":  c.UserId,
 				"message": string(message),
 			}
-			println("write:")
+
 			value := data["message"].(string)
 
 			c.socket.WriteMessage(websocket.TextMessage, []byte(value))

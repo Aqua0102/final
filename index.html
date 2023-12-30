@@ -6,47 +6,106 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>匿名聊天</title>
     <style>
+        body {
+            font-family: 'Source Code Pro', monospace;
+            margin: 0;
+            padding: 20px;
+            background-color: #1E1E1E;
+            color: #0cfa08;
+        }
+
+        #messages {
+            max-height: 900px;
+            overflow-y: scroll;
+            padding: 10px;
+            background-color: #282C35;
+            border: 1px solid #3E4451;
+            border-radius: 5px;
+        }
+
         .message {
             margin-bottom: 5px;
+            padding: 8px;
+            background-color: #373E4D;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #messageInput {
+            padding: 10px;
+            margin-top: 10px;
+            width: 60%;
+            border: 1px solid #3E4451;
+            border-radius: 5px;
+            background-color: #282C35;
+            color: #FFFFFF;
+            font-size: 16px;
+        }
+
+        #sendMessageBtn,
+        #leaveChatBtn {
+            padding: 10px;
+            margin-top: 10px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        #sendMessageBtn:hover,
+        #leaveChatBtn:hover {
+            background-color: #45a049;
         }
     </style>
 </head>
 
 <body>
     <div id="messages"></div>
-    <input type="text" id="messageInput" placeholder="輸入你的消息" onkeydown="handleKeyPress(event)" />
-    <button onclick="sendMessage()">發送</button>
-    <button onclick="leaveChat()">離開</button>
+    <input type="text" id="messageInput" placeholder="Type your message" onkeydown="handleKeyPress(event)" />
+    <button id="sendMessageBtn" onclick="sendMessage()">Send</button>
+    <button id="leaveChatBtn" onclick="leaveChat()">Leave</button>
 
     <script>
         const socket = new WebSocket("ws://localhost/ws");
 
-        socket.onmessage = function (event) {       // 在客戶端用 WebSocket 接收來自伺服器的消息
-
+        socket.onmessage = function (event) {
             const messagesDiv = document.getElementById("messages");
             const message = document.createElement("p");
             message.className = "message";
-            message.textContent = event.data;
+            message.innerHTML = event.data;
             messagesDiv.appendChild(message);
+
+            // Scroll to the bottom of the messages div
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+            // Add click event listener to each message
+            message.addEventListener("click", function () {
+                alert("You clicked the message: " + event.data);
+                // You can customize the action when clicking a message
+            });
         };
 
-        function sendMessage() {                // 發送訊息  
+        function sendMessage() {
             const messageInput = document.getElementById("messageInput");
-            const message = messageInput.value.trim(); // 使用 trim() 刪除前後空白
+            const message = messageInput.value.trim();
             if (message !== "") {
-                socket.send(message);               // 確保發送的訊息不是空白
+                socket.send(message);
                 messageInput.value = "";
             }
         }
 
-        function handleKeyPress(event) {        // 判斷按下Enter鍵
+        function handleKeyPress(event) {
             if (event.key === "Enter") {
                 sendMessage();
             }
         }
 
         function leaveChat() {
-            window.close(); // 關閉當前頁面
+            // Close the WebSocket connection before closing the window
+            socket.close();
+            window.close();
         }
     </script>
 </body>
