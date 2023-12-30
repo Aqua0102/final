@@ -1,9 +1,15 @@
 package main
 
 import (
+	"bufio"
+	"fmt"
+	"log"
 	"math/rand"
 	"net/http"
+	"os"
+	"strings"
 	"sync"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -29,6 +35,34 @@ type Client struct {
 	socket *websocket.Conn
 	send   chan []byte
 	UserId string
+}
+
+var profanityList []string
+
+func loadProfanityList() error {
+	file, err := os.Open("swear_word.txt")
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		word := strings.TrimSpace(scanner.Text())
+		profanityList = append(profanityList, word)
+	}
+
+	if err := scanner.Err(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func init() {
+	if err := loadProfanityList(); err != nil {
+		log.Fatal(err)
+	}
 }
 
 func (manager *ClientManager) start() {
@@ -180,9 +214,17 @@ func encodeMessage(data map[string]interface{}) []byte { // 將 UserID 和 Messa
 	userID, _ := data["userId"].(string)
 	message, _ := data["message"].(string)
 
-	result := userID + ": " + message
+	message = maskSwearWord(message)
+	//消除髒話
+	timestamp := "<span style=\"color: " + "#FFFFFF" + "; font-weight: bold;\">" + time.Now().Format("15:04:05") + "</span>"
+
+	result := timestamp + " " + userID + " " + ": " + message
 
 	return []byte(result)
+}
+
+func getRandomColor() string {
+	return "#" + fmt.Sprintf("%06X", rand.Intn(0xFFFFFF))
 }
 
 func generateUserId() string { // 生成 UserID
@@ -191,5 +233,17 @@ func generateUserId() string { // 生成 UserID
 	for i := range result {
 		result[i] = charset[rand.Intn(len(charset))]
 	}
-	return "User_" + string(result)
+	color := getRandomColor()
+	userID := "User_" + string(result)
+	userID = "<span style=\"color: " + color + "; font-weight: bold;\">" + userID + "</span>"
+	return userID
+}
+
+func maskSwearWord(input string) string {
+	message := input
+	for _, word := range profanityList {
+		runes := []rune(word)
+		message = strings.ReplaceAll(message, word, strings.Repeat("*", len(runes)))
+	}
+	return message
 }

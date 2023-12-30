@@ -77,14 +77,10 @@
             message.innerHTML = event.data;
             messagesDiv.appendChild(message);
 
-            // Scroll to the bottom of the messages div
+
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
 
-            // Add click event listener to each message
-            message.addEventListener("click", function () {
-                alert("You clicked the message: " + event.data);
-                // You can customize the action when clicking a message
-            });
+
         };
 
         function sendMessage() {
@@ -103,7 +99,6 @@
         }
 
         function leaveChat() {
-            // Close the WebSocket connection before closing the window
             socket.close();
             window.close();
         }
