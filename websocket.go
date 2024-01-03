@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+	"math/rand"
 	"net/http"
 	"sync"
 
@@ -59,31 +61,47 @@ func NewClientManager() *ClientManager {
 	}
 }
 
-func (manager *ClientManager) start() {
+func (manager *ClientManager) start() { //在webstocket中
 	for {
 		select {
-		case conn := <-manager.register:
+		case conn := <-manager.register: //註冊新連線，每當有新連線註冊時透過manager.register通道接收新連線
 			manager.mu.Lock()
 			manager.clients[conn] = true
 			manager.mu.Unlock()
-		case conn := <-manager.unregister:
+		case conn := <-manager.unregister: //取消註冊連線，每當有連線要取消註冊時透過manager.unregister通道接收該連線。
 			if _, ok := manager.clients[conn]; ok {
 				manager.mu.Lock()
 				close(conn.send)
 				delete(manager.clients, conn)
 				manager.mu.Unlock()
 			}
-		case message := <-manager.broadcast:
+		case message := <-manager.broadcast: //當有訊息要廣播時，透過manager.broadcast通道接收該訊息
 			manager.mu.Lock()
 			for conn := range manager.clients {
 				select {
-				case conn.send <- message:
+				case conn.send <- message: //對每個連線，嘗試將訊息發送到conn.send 通道
 				default:
 					close(conn.send)
-					delete(manager.clients, conn)
+					delete(manager.clients, conn) //若無法接通連線則表示連線已斷開，關閉連線
 				}
 			}
-			manager.mu.Unlock()
+			manager.mu.Unlock() //確保在對Client操作時的正確性
 		}
 	}
+}
+
+func generateUserId() string {
+	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	result := make([]byte, 4)
+	for i := range result {
+		result[i] = charset[rand.Intn(len(charset))]
+	}
+	color := getRandomColor()
+	userID := "User_" + string(result)
+	userID = "<span style=\"color: " + color + "; font-weight: bold;\">" + userID + "</span>"
+	return userID
+}
+
+func getRandomColor() string {
+	return "#" + fmt.Sprintf("%06X", rand.Intn(0xFFFFFF))
 }
