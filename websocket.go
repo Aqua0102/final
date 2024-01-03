@@ -40,12 +40,6 @@ func serveWs(manager *ClientManager, w http.ResponseWriter, r *http.Request) {
 	go client.writePump()
 	client.readPump(manager)
 
-	// Send a leave message when the user disconnects
-	leftMessage := map[string]interface{}{
-		"userId":  "server",
-		"message": userId + " left the chat",
-	}
-	manager.broadcast <- encodeMessage(leftMessage)
 }
 
 type ClientManager struct {
